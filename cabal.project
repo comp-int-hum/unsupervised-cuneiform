@@ -1,0 +1,27 @@
+packages: .
+
+source-repository-package
+    type: git
+    location: https://github.com/hasktorch/hasktorch.git
+    subdir: codegen
+
+source-repository-package
+    type: git
+    location: https://github.com/hasktorch/hasktorch.git
+    subdir: libtorch-ffi
+
+source-repository-package
+    type: git
+    location: https://github.com/hasktorch/hasktorch.git
+    subdir: libtorch-ffi-helper
+
+source-repository-package
+    type: git
+    location: https://github.com/hasktorch/hasktorch.git
+    subdir: hasktorch
+
+write-ghc-environment-files: always
+tests: true
+documentation: false
+shared: true
+executable-dynamic: true
