@@ -52,17 +52,17 @@ deriving instance Show (MLPLayerStack layerSizes dtype device)
 
 
 
-class MLPLayerStackParameterized (flag :: Bool) inputSize hiddenSize numLayers directionality dtype device where
-  type MLPLayerStackParameters flag inputSize hiddenSize numLayers directionality dtype device :: [Type]
-  mlpLayerStackFlattenParameters ::
-    Proxy flag ->
-    MLPLayerStack inputSize hiddenSize numLayers directionality dtype device ->
-    HList (MLPLayerStackParameters flag inputSize hiddenSize numLayers directionality dtype device)
-  mlpLayerStackReplaceParameters ::
-    Proxy flag ->
-    MLPLayerStack inputSize hiddenSize numLayers directionality dtype device ->
-    HList (MLPLayerStackParameters flag inputSize hiddenSize numLayers directionality dtype device) ->
-    MLPLayerStack inputSize hiddenSize numLayers directionality dtype device
+-- class MLPLayerStackParameterized (flag :: Bool) inputSize hiddenSize numLayers directionality dtype device where
+--   type MLPLayerStackParameters flag inputSize hiddenSize numLayers directionality dtype device :: [Type]
+--   mlpLayerStackFlattenParameters ::
+--     Proxy flag ->
+--     MLPLayerStack inputSize hiddenSize numLayers directionality dtype device ->
+--     HList (MLPLayerStackParameters flag inputSize hiddenSize numLayers directionality dtype device)
+--   mlpLayerStackReplaceParameters ::
+--     Proxy flag ->
+--     MLPLayerStack inputSize hiddenSize numLayers directionality dtype device ->
+--     HList (MLPLayerStackParameters flag inputSize hiddenSize numLayers directionality dtype device) ->
+--     MLPLayerStack inputSize hiddenSize numLayers directionality dtype device
 
 -- instance
 --   Parameterized (Linear inputSize outputSize dtype device) =>
