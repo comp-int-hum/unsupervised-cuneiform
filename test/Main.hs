@@ -1,10 +1,10 @@
 module Main (main) where
 
 import Prelude hiding (readFile)
-import Data.Either (fromLeft)
+import Data.Either (fromRight)
 import Data.Text.Encoding (decodeUtf8Lenient)
 import Data.Text (Text)
-import Data.ByteString.Lazy (readFile, toStrict, ByteString)
+import Data.ByteString.Lazy (readFile, toStrict)
 import qualified Codec.Compression.GZip as GZip
 import Test.Hspec (hspec, describe, it, shouldBe, before)
 import Paths_unsupervised_cuneiform (getDataFileName)
@@ -16,11 +16,6 @@ withTextFrom f = do
   bs <- readFile fn
   return $ (decodeUtf8Lenient . toStrict . GZip.decompress) bs
 
-withBytesFrom :: String -> IO ByteString
-withBytesFrom f = do
-  fn <- getDataFileName f
-  readFile fn
-  
 withFileName :: String -> IO String
 withFileName s = getDataFileName s
 
@@ -30,17 +25,26 @@ main = do
     describe "Data" $ do
       before (withTextFrom "cdli_trans_sample.atf.gz") $ do
         it "parses ATF" $ \c -> do
-          (fromLeft "" (UC.parseATF c)) `shouldBe` ""
+          let xs = UC.parseATF c
+          (print . last . fromRight []) xs
+          (length $ fromRight [] xs) `shouldBe` 7
       before (withTextFrom "cdli_fields_sample.csv.gz") $ do
         it "parses CSV" $ \c -> do
-          (fromLeft "" (UC.parseCSV c)) `shouldBe` ""
-      before (withBytesFrom "photo_sample.jpg") $ do
+          let xs = UC.parseCSV c
+          (print . last . fromRight []) xs
+          (length $ fromRight [] xs) `shouldBe` 19
+      before (withFileName "P101175_photo.jpg") $ do
         it "parses photo image" $ \c -> do
-          (fromLeft "" (UC.parseImage c)) `shouldBe` ""
-      before (withBytesFrom "line_sample.jpg") $ do
-        it "parses line image" $ \c -> do
-          (fromLeft "" (UC.parseImage c)) `shouldBe` ""
+          xs <- UC.parseImage c
+          (print . last . fromRight []) xs
+          (length $ fromRight [] xs) `shouldBe` 1
+      before (withFileName "P101175_line.jpg") $ do
+        it "parses line image" $ \c -> do        
+          xs <- UC.parseImage c
+          (print . last . fromRight []) xs
+          (length $ fromRight [] xs) `shouldBe` 1
       before (withFileName "oracc_sample.zip") $ do
-        it "parses ORACC" $ \c -> do
-          res <- UC.parseORACC c
-          (fromLeft "" res) `shouldBe` ""
+        it "parses ORACC" $ \c -> do          
+          xs <- UC.parseORACC c
+          (print . last . fromRight []) xs
+          (length $ fromRight [] xs) `shouldBe` 1

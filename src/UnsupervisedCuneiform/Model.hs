@@ -1,4 +1,177 @@
 module UnsupervisedCuneiform.Model () where
 
-import Torch
-import Torch.Serialize
+-- import GHC.Generics
+-- import Torch
+-- import Torch.Serialize
+
+
+
+
+
+-- data ImageEncoderSpec = ImageEncoderSpec
+--   deriving (Show, Eq)
+
+-- data ImageEncoder = ImageEncoder
+--   deriving (Generic, Show, Parameterized)
+
+
+-- instance Randomizable MLPSpec MLP where
+--   sample MLPSpec {..} =
+--     MLP
+--       <$> sample (LinearSpec inputFeatures hiddenFeatures0)
+--       <*> sample (LinearSpec hiddenFeatures0 hiddenFeatures1)
+--       <*> sample (LinearSpec hiddenFeatures1 outputFeatures)
+
+-- mlp :: MLP -> Tensor -> Tensor
+-- mlp MLP {..} input =
+--   logSoftmax (Dim 1)
+--     . linear l2
+--     . relu
+--     . linear l1
+--     . relu
+--     . linear l0
+--     $ input
+
+-- trainLoop :: Optimizer o => MLP -> o -> ListT IO (Tensor, Tensor) -> IO MLP
+-- trainLoop model optimizer = P.foldM step begin done . enumerateData
+--   where
+--     step :: MLP -> ((Tensor, Tensor), Int) -> IO MLP
+--     step model ((input, label), iter) = do
+--       let loss = nllLoss' label $ mlp model input
+--       when (iter `mod` 50 == 0) $ do
+--         putStrLn $ "Iteration: " ++ show iter ++ " | Loss: " ++ show loss
+--       (newParam, _) <- runStep model optimizer loss 1e-3
+--       pure newParam
+--     done = pure
+--     begin = pure model
+
+-- displayImages :: MLP -> (Tensor, Tensor) -> IO ()
+-- displayImages model (testImg, testLabel) = do
+--   V.dispImage testImg
+--   putStrLn $ "Model        : " ++ (show . (argmax (Dim 1) RemoveDim) . exp $ mlp model testImg)
+--   putStrLn $ "Ground Truth : " ++ (show testLabel)
+  
+
+
+-- {-# LANGUAGE AllowAmbiguousTypes #-}
+-- {-# LANGUAGE DataKinds #-}
+-- {-# LANGUAGE DeriveAnyClass #-}
+-- {-# LANGUAGE DeriveGeneric #-}
+-- {-# LANGUAGE FlexibleInstances #-}
+-- {-# LANGUAGE GADTs #-}
+-- {-# LANGUAGE MultiParamTypeClasses #-}
+-- {-# LANGUAGE PartialTypeSignatures #-}
+-- {-# LANGUAGE RecordWildCards #-}
+-- {-# LANGUAGE ScopedTypeVariables #-}
+-- {-# LANGUAGE TypeApplications #-}
+-- {-# LANGUAGE TypeFamilies #-}
+-- {-# LANGUAGE TypeOperators #-}
+-- {-# LANGUAGE UndecidableInstances #-}
+-- {-# LANGUAGE NoStarIsType #-}
+
+-- module Main where
+
+-- import Common
+-- import Control.Exception.Safe
+--   ( SomeException (..),
+--     try,
+--   )
+-- import GHC.Generics
+-- import GHC.TypeLits
+-- import System.Environment
+-- import Torch.Internal.Managed.Type.Context (manual_seed_L)
+-- import Torch.Typed
+
+-- type NoStrides = '(1, 1)
+
+-- type NoPadding = '(0, 0)
+
+-- type KernelSize = '(2, 2)
+
+-- type Strides = '(2, 2)
+
+-- data CNNSpec (dtype :: DType) (device :: (DeviceType, Nat))
+--   = CNNSpec
+--   deriving (Show, Eq)
+
+-- data CNN (dtype :: DType) (device :: (DeviceType, Nat)) where
+--   CNN ::
+--     forall dtype device.
+--     { conv0 :: Conv2d 1 20 5 5 dtype device,
+--       conv1 :: Conv2d 20 50 5 5 dtype device,
+--       fc0 :: Linear (4 * 4 * 50) 500 dtype device,
+--       fc1 :: Linear 500 ClassDim dtype device
+--     } ->
+--     CNN dtype device
+--   deriving (Show, Generic, Parameterized)
+
+-- cnn ::
+--   forall batchSize dtype device.
+--   _ =>
+--   CNN dtype device ->
+--   Tensor device dtype '[batchSize, DataDim] ->
+--   Tensor device dtype '[batchSize, ClassDim]
+-- cnn CNN {..} =
+--   forward fc1
+--     . relu
+--     . forward fc0
+--     . reshape @'[batchSize, 4 * 4 * 50]
+--     . maxPool2d @KernelSize @Strides @NoPadding
+--     . relu
+--     . conv2dForward @NoStrides @NoPadding conv1
+--     . maxPool2d @KernelSize @Strides @NoPadding
+--     . relu
+--     . conv2dForward @NoStrides @NoPadding conv0
+--     . unsqueeze @1
+--     . reshape @'[batchSize, Rows, Cols]
+
+-- instance
+--   ( KnownDType dtype,
+--     KnownDevice device,
+--     RandDTypeIsValid device dtype
+--   ) =>
+--   Randomizable
+--     (CNNSpec dtype device)
+--     (CNN dtype device)
+--   where
+--   sample CNNSpec =
+--     CNN
+--       <$> sample (Conv2dSpec @1 @20 @5 @5)
+--       <*> sample (Conv2dSpec @20 @50 @5 @5)
+--       <*> sample (LinearSpec @(4 * 4 * 50) @500)
+--       <*> sample (LinearSpec @500 @10)
+
+-- type BatchSize = 256
+
+-- train' ::
+--   forall (device :: (DeviceType, Nat)).
+--   _ => String -> 
+--   IO ()
+-- train' dataPath = do
+--   let learningRate = 0.1
+--   manual_seed_L 123
+--   initModel <- sample (CNNSpec @'Float @device)
+--   let initOptim = mkAdam 0 0.9 0.999 (flattenParameters initModel)
+--   train
+--     @BatchSize @device
+--     initModel
+--     initOptim
+--     (\model _ input -> return $ cnn model input)
+--     learningRate
+--     "static-mnist-cnn.pt"
+--     dataPath
+
+-- main :: IO ()
+-- main = do
+--   args :: [String] <- getArgs
+--   deviceStr <- try (getEnv "DEVICE") :: IO (Either SomeException String)
+--   let
+--       dataPath :: String = case args of
+--         [] -> error $ "No data path provided"
+--         _ -> head args
+--   case deviceStr of
+--     Right "cpu" -> train' @'( 'CPU, 0) dataPath 
+--     Right "cuda:0" -> train' @'( 'CUDA, 0) dataPath
+--     Right "mps" -> train' @'( 'MPS, 0) dataPath
+--     Right device -> error $ "Unknown device setting: " ++ device
+--     _ -> train' @'( 'CPU, 0) dataPath 

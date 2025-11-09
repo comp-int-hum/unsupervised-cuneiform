@@ -64,19 +64,39 @@ library
 
     -- Modules exported by the library.
     exposed-modules:  UnsupervisedCuneiform
-                    , UnsupervisedCuneiform.Tablet
+                    , UnsupervisedCuneiform.Artifact
                     , UnsupervisedCuneiform.CDLI
                     , UnsupervisedCuneiform.ORACC
                     , UnsupervisedCuneiform.Image
                     , UnsupervisedCuneiform.Model
-                    , UnsupervisedCuneiform.Corpus
+                    , UnsupervisedCuneiform.Domain
                     , UnsupervisedCuneiform.Server
+                    , UnsupervisedCuneiform.TH
+                    , UnsupervisedCuneiform.MLP                    
 
     -- Modules included in this library but not exported.
     --other-modules:
 
     -- LANGUAGE extensions used by modules in this package.
-    -- other-extensions:
+    default-extensions: DataKinds
+                      , OverloadedStrings
+                      , TemplateHaskell
+                      , DeriveGeneric
+                      , FlexibleInstances
+                      , MultiParamTypeClasses
+                      , TypeFamilies
+                      , DeriveAnyClass
+                      , DerivingStrategies
+                      , DerivingVia
+                      , GeneralizedNewtypeDeriving
+                      , RankNTypes
+                      , TypeOperators
+                      , GADTs
+                      , FlexibleContexts
+                      , LambdaCase
+                      , UndecidableInstances
+                      , ScopedTypeVariables
+                      , DuplicateRecordFields                      
 
     -- Other library packages from which modules are imported.
     build-depends:    base ^>=4.20.2.0
@@ -92,10 +112,21 @@ library
                     , hasktorch
                     , JuicyPixels
                     , containers
+                    , directory
                     , cassava
                     , vector
                     , mtl
                     , hyperbole
+                    , lens
+                    , data-default
+                    , regex-tdfa
+                    , effectful-core
+                    , atomic-css
+                    , effectful
+                    , deepseq
+                    , template-haskell
+                    , ghc-typelits-extra
+                    , ghc-prim
                     
     -- Directories containing source files.
     hs-source-dirs:   src
@@ -103,10 +134,51 @@ library
     -- Base language which the package is written in.
     default-language: Haskell2010
 
+executable marshal_corpus
+    -- Import common warning flags.
+    import:           warnings
+
+    -- .hs or .lhs file containing the Main module.
+    main-is:          MarshalCorpus.hs
+
+    -- Modules included in this executable, other than Main.
+    -- other-modules:
+
+    -- LANGUAGE extensions used by modules in this package.
+    default-extensions: ExplicitNamespaces
+                      , DataKinds
+                      , StandaloneDeriving
+                      , TypeOperators
+                      , FlexibleInstances
+                      , DeriveGeneric
+                      , OverloadedStrings
+
+    -- Other library packages from which modules are imported.
+    build-depends: base ^>=4.20.2.0
+                 , text
+                 , bytestring
+                 , directory
+                 , zlib
+                 , optparse-generic
+                 , filepath
+                 , containers
+                 , unsupervised-cuneiform
+
+    -- Directories containing source files.
+    hs-source-dirs:   scripts
+
+    -- Base language which the package is written in.
+    default-language: Haskell2010
+    
 executable train_model
     -- Import common warning flags.
     import:           warnings
 
+    default-extensions: DataKinds
+                      , OverloadedStrings
+                      , TemplateHaskell
+                      , KindSignatures
+    
     -- .hs or .lhs file containing the Main module.
     main-is:          TrainModel.hs
 
@@ -117,9 +189,10 @@ executable train_model
     -- other-extensions:
 
     -- Other library packages from which modules are imported.
-    build-depends:
-        base ^>=4.20.2.0,
-        unsupervised-cuneiform
+    build-depends: base ^>=4.20.2.0
+                 , unsupervised-cuneiform
+                 , lens
+                 , hasktorch
 
     -- Directories containing source files.
     hs-source-dirs:   scripts
@@ -127,23 +200,39 @@ executable train_model
     -- Base language which the package is written in.
     default-language: Haskell2010
 
-executable serve_model
+executable serve
     -- Import common warning flags.
     import:           warnings
 
     -- .hs or .lhs file containing the Main module.
-    main-is:          ServeModel.hs
+    main-is:          Serve.hs
 
     -- Modules included in this executable, other than Main.
     -- other-modules:
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
+    default-extensions: ExplicitNamespaces
+                      , DataKinds
+                      , StandaloneDeriving
+                      , TypeOperators
+                      , FlexibleInstances
+                      , DeriveGeneric
+                      , OverloadedStrings
 
     -- Other library packages from which modules are imported.
-    build-depends:
-        base ^>=4.20.2.0,
-        unsupervised-cuneiform
+    build-depends: base ^>=4.20.2.0
+                 , unsupervised-cuneiform
+                 , hyperbole
+                 , atomic-css
+                 , text
+                 , zlib
+                 , optparse-generic
+                 , bytestring
+                 , filepath
+                 , directory
+                 , containers
+                 , effectful-core
 
     -- Directories containing source files.
     hs-source-dirs:   scripts
@@ -162,7 +251,7 @@ test-suite unsupervised-cuneiform-test
     -- other-modules:
 
     -- LANGUAGE extensions used by modules in this package.
-    other-extensions: OverloadedStrings
+    -- other-extensions:
 
     -- The interface type and version of the test suite.
     type:             exitcode-stdio-1.0
