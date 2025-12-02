@@ -60,7 +60,7 @@ common warnings
 
 library
     -- Import common warning flags.
-    import:           warnings
+    --import:           warnings
 
     -- Modules exported by the library.
     exposed-modules:  UnsupervisedCuneiform
@@ -72,31 +72,42 @@ library
                     , UnsupervisedCuneiform.Domain
                     , UnsupervisedCuneiform.Server
                     , UnsupervisedCuneiform.TH
-                    , UnsupervisedCuneiform.MLP                    
+                    --, UnsupervisedCuneiform.TemplateConfig
+                    , UnsupervisedCuneiform.Config                    
+                    , UnsupervisedCuneiform.MLP
 
     -- Modules included in this library but not exported.
     --other-modules:
 
     -- LANGUAGE extensions used by modules in this package.
-    default-extensions: DataKinds
-                      , OverloadedStrings
-                      , TemplateHaskell
-                      , DeriveGeneric
-                      , FlexibleInstances
-                      , MultiParamTypeClasses
-                      , TypeFamilies
+    default-extensions: AllowAmbiguousTypes
+                      , ConstraintKinds
+                      , DataKinds
                       , DeriveAnyClass
+                      , DeriveGeneric
                       , DerivingStrategies
                       , DerivingVia
-                      , GeneralizedNewtypeDeriving
-                      , RankNTypes
-                      , TypeOperators
-                      , GADTs
+                      , DuplicateRecordFields
                       , FlexibleContexts
+                      , FlexibleInstances
+                      , FunctionalDependencies
+                      , GADTs
+                      , GeneralizedNewtypeDeriving
+                      , KindSignatures
                       , LambdaCase
-                      , UndecidableInstances
+                      , MultiParamTypeClasses
+                      , OverloadedStrings
+                      , PartialTypeSignatures
+                      , PolyKinds
+                      , RankNTypes
+                      , RecordWildCards
                       , ScopedTypeVariables
-                      , DuplicateRecordFields                      
+                      , StandaloneDeriving
+                      , TemplateHaskell
+                      , TypeApplications
+                      , TypeFamilies
+                      , TypeOperators
+                      , UndecidableInstances
 
     -- Other library packages from which modules are imported.
     build-depends:    base ^>=4.20.2.0
@@ -127,6 +138,7 @@ library
                     , template-haskell
                     , ghc-typelits-extra
                     , ghc-prim
+                    , optparse-generic
                     
     -- Directories containing source files.
     hs-source-dirs:   src
@@ -174,10 +186,35 @@ executable train_model
     -- Import common warning flags.
     import:           warnings
 
-    default-extensions: DataKinds
-                      , OverloadedStrings
-                      , TemplateHaskell
+    default-extensions: AllowAmbiguousTypes
+                      , ConstraintKinds
+                      , DataKinds
+                      , DeriveAnyClass
+                      , DeriveGeneric
+                      , DerivingStrategies
+                      , DerivingVia
+                      , DuplicateRecordFields
+                      , FlexibleContexts
+                      , FlexibleInstances
+                      , FunctionalDependencies
+                      , GADTs
+                      , GeneralizedNewtypeDeriving
                       , KindSignatures
+                      , LambdaCase
+                      , MultiParamTypeClasses
+                      , OverloadedStrings
+                      , PartialTypeSignatures
+                      , PolyKinds
+                      , RankNTypes
+                      , RecordWildCards
+                      , ScopedTypeVariables
+                      , StandaloneDeriving
+                      , TemplateHaskell
+                      , TypeApplications
+                      , TypeFamilies
+                      , TypeOperators
+                      , UndecidableInstances
+
     
     -- .hs or .lhs file containing the Main module.
     main-is:          TrainModel.hs
@@ -193,6 +230,7 @@ executable train_model
                  , unsupervised-cuneiform
                  , lens
                  , hasktorch
+                 , reflection
 
     -- Directories containing source files.
     hs-source-dirs:   scripts

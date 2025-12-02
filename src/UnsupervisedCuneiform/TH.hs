@@ -1,38 +1,25 @@
-{-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE PartialTypeSignatures #-}
-{-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE UndecidableInstances #-}
-
 module UnsupervisedCuneiform.TH ( makeModel
                                 ) where
 
 import Prelude hiding (tanh)
 import Data.Char (toLower, toUpper)
-import Data.Proxy
-import Foreign.ForeignPtr
+--import Data.Proxy
+--import Foreign.ForeignPtr
 import GHC.Generics hiding (NoSourceUnpackedness, NoSourceStrictness)
 import GHC.TypeLits
-import GHC.TypeLits.Extra
-import System.Environment
-import System.IO.Unsafe
+--import GHC.TypeLits.Extra
+--import System.Environment
+--import System.IO.Unsafe
 import Torch.Internal.Managed.Type.Context (manual_seed_L)
 import Torch.Typed
-import Torch.Typed (DType, DeviceType)
+import Torch.Typed (DType, DeviceType, Dropout(..))
 import Torch.DType
+import Torch.Initializers (NonLinearity(..))
 import Control.Monad
 import Language.Haskell.TH
-
-
+import Effectful
+import UnsupervisedCuneiform.MLP (MLP(..))
+--import UnsupervisedCuneiform.TemplateConfig (TemplateConfig(..))
 
 {-
 each property p on entity-type e needs:
@@ -75,7 +62,7 @@ unwrapTypeList ts = go ts []
 
 dtypeTV n = do
   TyConI (DataD [] vv _ _ _ _) <- reify ''DType
-  --runIO $ print x
+  
   return $ KindedTV n' BndrReq (ConT ''DType)
   where
     n' = (mkName . lc) $ (nameBase n) ++ "Dtype"
@@ -98,21 +85,13 @@ nest n tvs = go tvs n'
     go (x:xs) acc = go xs (AppT acc (VarT x))
 
 
-type DefaultDevice = '(CPU, 0)
-type DefaultSummaryShape = 128
-type DefaultRNNSHape = '()
-type DefaultCategoricalEmbeddingShape = 32
-type DefaultCNNShape = '(4, 4)
-type DefaultCNNStack = '[ '(3, 10, 4, 4), '(10, 10, 4, 4), '(10, 10, 4, 4) ]
-type DefaultImageEmbeddingShape = 32
-
-makeModel :: Int -> Name -> DecsQ
-makeModel d n = do
+makeModel :: Name -> Q [Dec]
+makeModel n = do
   let base@(c:cs) = nameBase n
       specName = mkName $ base ++ "ModelSpec"
       modelName = mkName $ base ++ "Model"
       funcName = mkName $ (toLower c : cs) ++ "Model"
-      
+  
   TyConI (TySynD _ _ ts) <- reify n
   dataT@(KindedTV dn _ _) <- dtypeTV n
   deviceT@(KindedTV dvn _ _) <- deviceTV n  
@@ -142,8 +121,10 @@ makeModel d n = do
       --forward = FunD name [Clause]
       --rand = InstanceD (Maybe Overlap) Cxt Type [Dec]
       -- default___
+
       
   return $ [spec, model]
+
 
 
 processEntityType dn dvn n = do
@@ -156,9 +137,30 @@ stringify (AppT (ConT n) (ConT m)) = [nameBase n, nameBase m]
 stringify (AppT (ConT n) (AppT _ _)) = [nameBase n, "List"]
 stringify _ = []
 
+
+--makeMLP :: String -> Maybe [Int] -> NonLinearity -> Q ([TyVarBndr BndrVis], [VarBangType], [VarBangType])
+--makeMLP base layers nl = return ([], [], [])
+
+
+--makeAutoencoder :: String -> Maybe [Int] -> Maybe Int -> Maybe [Int] -> NonLinearity -> Q ([TyVarBndr BndrVis], [VarBangType], [VarBangType])
+--makeAutoencoder base encoder bottleneck decoder nl = return ([], [], [])
+
+--makeLstm :: String -> Maybe Int -> Maybe Int -> Maybe Int -> Maybe RNNDirectionality -> Maybe Double -> NonLinearity -> Q ([TyVarBndr BndrVis], [VarBangType], [VarBangType])
+--makeLstm base input hidden numLayers direction dropout nl = return ([], [], [])
+
+--makeCnn :: String -> Q ()
+
+--   let mlp = mkName $ name' ++ "MLP"
+-- mlpSpec = mkName $ name' ++ "MLPSpec"
+--                                                                 mlpLayerSizes = mkName $ name' ++ "MLPLayerSizes"
+--                                                             return ( [ KindedTV mlpLayerSizes BndrReq (AppT (ConT ''[]) (ConT ''Nat)) ]
+--                                                                    , []
+--                                                                    , []
+--                                                                    )
+
 -- listOfTypeParams, listOfSubSpecs, listOfConstructors,
 processField :: Name -> Name -> String -> (Name, Bang, Type) -> Q ([TyVarBndr BndrVis], [VarBangType], [VarBangType])
-processField dn dvn prefix (name, bang, tp) = case tp' of ["Categorical"] -> do
+processField dn dvn prefix (name, bang, tp) = case tp' of ["Categorical_"] -> do
                                                             let emb = mkName $ name' ++ "Embedding"
                                                                 embSpec = mkName $ name' ++ "EmbeddingSpec"
                                                                 embPad = mkName $ name' ++ "Padding"
@@ -194,7 +196,7 @@ processField dn dvn prefix (name, bang, tp) = case tp' of ["Categorical"] -> do
                                                                    , []
                                                                    , []
                                                                    )
-                                                          ["Text"] -> do
+                                                          ["Text_"] -> do
                                                             let emb = mkName $ name' ++ "Embedding"
                                                                 embSpec = mkName $ name' ++ "EmbeddingSpec"
                                                                 embSize = mkName $ name' ++ "EmbeddingSize"
@@ -237,7 +239,7 @@ processField dn dvn prefix (name, bang, tp) = case tp' of ["Categorical"] -> do
                                                                        )                                                                       
                                                                      ]
                                                                    )                                                       
-                                                          ("Image":_) -> do
+                                                          ("Image_":_) -> do
                                                             -- CNN
                                                             let cnnInChannels = mkName $ name' ++ "InputChannelSizes"
                                                                 cnnWidths = mkName $ name' ++ "KernelWidths"
