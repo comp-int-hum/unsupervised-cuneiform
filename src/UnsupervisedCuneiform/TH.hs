@@ -19,6 +19,14 @@ import Control.Monad
 import Language.Haskell.TH
 import Effectful
 import UnsupervisedCuneiform.MLP (MLP(..))
+--import UnsupervisedCuneiform.MLP (MLPSpec(..), MLP(..))
+--import UnsupervisedCuneiform.CNN (CNNSpec(..), CNN(..))
+--import UnsupervisedCuneiform.RNN (RNNSpec(..), RNN(..))
+--import UnsupervisedCuneiform.AutoEncoder (AutoEncoderSpec(..), AutoEncoder(..))
+--import UnsupervisedCuneiform.GCN (GCNSpec(..), GCN(..))
+--import UnsupervisedCuneiform.StarCoder (StarCoderSpec(..), StarCoder(..))
+
+
 --import UnsupervisedCuneiform.TemplateConfig (TemplateConfig(..))
 
 {-
@@ -59,6 +67,7 @@ unwrapTypeList ts = go ts []
   where
     go (AppT rest (ConT tp)) acc = go rest (tp:acc)
     go (TupleT _) acc = acc
+    go _ acc = acc
 
 dtypeTV n = do
   TyConI (DataD [] vv _ _ _ _) <- reify ''DType
@@ -85,8 +94,8 @@ nest n tvs = go tvs n'
     go (x:xs) acc = go xs (AppT acc (VarT x))
 
 
-makeModel :: Name -> Q [Dec]
-makeModel n = do
+makeModel :: Name -> Int -> Q [Dec]
+makeModel n d = do
   let base@(c:cs) = nameBase n
       specName = mkName $ base ++ "ModelSpec"
       modelName = mkName $ base ++ "Model"
@@ -125,7 +134,7 @@ makeModel n = do
       
   return $ [spec, model]
 
-
+-- Categorical Scalar Image Text
 
 processEntityType dn dvn n = do
   let entityTypeName@(c:cs) = nameBase n
@@ -157,6 +166,10 @@ stringify _ = []
 --                                                                    , []
 --                                                                    , []
 --                                                                    )
+
+-- depth-wise list
+-- adjacency matrices
+
 
 -- listOfTypeParams, listOfSubSpecs, listOfConstructors,
 processField :: Name -> Name -> String -> (Name, Bang, Type) -> Q ([TyVarBndr BndrVis], [VarBangType], [VarBangType])

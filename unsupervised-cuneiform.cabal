@@ -56,7 +56,9 @@ data-files: data/*.zip
           , data/*.jpg
    
 common warnings
-    ghc-options: -Wall
+    ghc-options: -Wall -freduction-depth=0
+                 -- -freduction-depth=0 -dshow-passes
+                 
 
 library
     -- Import common warning flags.
@@ -72,10 +74,18 @@ library
                     , UnsupervisedCuneiform.Domain
                     , UnsupervisedCuneiform.Server
                     , UnsupervisedCuneiform.TH
-                    --, UnsupervisedCuneiform.TemplateConfig
-                    , UnsupervisedCuneiform.Config                    
+                    , UnsupervisedCuneiform.Config
+                    , UnsupervisedCuneiform.Configuration                    
                     , UnsupervisedCuneiform.MLP
-
+                    , UnsupervisedCuneiform.Embedding
+                    , UnsupervisedCuneiform.CNN
+                    , UnsupervisedCuneiform.RNN
+                    , UnsupervisedCuneiform.AutoEncoder
+                    , UnsupervisedCuneiform.GCN
+                    , UnsupervisedCuneiform.StarCoder
+                    , UnsupervisedCuneiform.Utils
+                    , UnsupervisedCuneiform.Trie
+                    
     -- Modules included in this library but not exported.
     --other-modules:
 
@@ -108,6 +118,7 @@ library
                       , TypeFamilies
                       , TypeOperators
                       , UndecidableInstances
+                      , StandaloneKindSignatures
 
     -- Other library packages from which modules are imported.
     build-depends:    base ^>=4.20.2.0
@@ -139,6 +150,8 @@ library
                     , ghc-typelits-extra
                     , ghc-prim
                     , optparse-generic
+                    , tagged
+                    , kind-generics
                     
     -- Directories containing source files.
     hs-source-dirs:   src
@@ -214,6 +227,7 @@ executable train_model
                       , TypeFamilies
                       , TypeOperators
                       , UndecidableInstances
+                      , PatternSynonyms
 
     
     -- .hs or .lhs file containing the Main module.
@@ -231,6 +245,9 @@ executable train_model
                  , lens
                  , hasktorch
                  , reflection
+                 , tagged
+                 , ghc-prim
+                 , deepseq
 
     -- Directories containing source files.
     hs-source-dirs:   scripts

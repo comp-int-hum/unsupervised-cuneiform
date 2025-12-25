@@ -1,11 +1,13 @@
 module UnsupervisedCuneiform.MLP ( MLP(..)
                                  , MLPSpec(..)
+                                 , InstantiateTypesR(..)
                                  ) where
 
 import System.IO.Unsafe
 import GHC.TypeLits
 import GHC.Types
 import GHC.Generics
+import Data.Proxy
 import Torch.Typed hiding (FoldLayers)
 
 
@@ -22,7 +24,10 @@ data MLP (shape :: [Nat]) (dtype :: DType) (device :: (DeviceType, Nat)) where
     } -> MLP shape dtype device
   deriving (Generic)
 
-deriving instance ( Show ( HList (InstantiateTypesR shape dtype device Linear) ) ) => Show (MLP shape dtype device)
+instance Show (MLP shape dtype device) where
+  show _ = "MLP"
+
+--deriving instance ( Show ( HList (InstantiateTypesR shape dtype device Linear) ) ) => Show (MLP shape dtype device)
 
 
 class InstantiateLinearSpecsF (shape :: [Nat]) (dtype :: DType) (device :: (DeviceType, Nat)) where
@@ -61,10 +66,20 @@ instance
   , RandDTypeIsValid device dtype
   , Randomizable (HList (InstantiateTypesR shape dtype device LinearSpec) ) (HList (InstantiateTypesR shape dtype device Linear) )
   , InstantiateLinearSpecsF shape dtype device
-  , InstantiateLinearSpecsF '[] dtype device
   ) =>
   Randomizable (MLPSpec shape dtype device) (MLP shape dtype device) where
-  sample (MLPSpec {..}) = MLP <$> sample (instantiateLinearSpecsF @shape @dtype @device)
+  sample _ = MLP <$> sample (instantiateLinearSpecsF @shape @dtype @device)
+
+
+instance
+  ( KnownDType dtype
+  , KnownDevice device
+  , RandDTypeIsValid device dtype
+  , Randomizable (HList (InstantiateTypesR shape dtype device LinearSpec) ) (HList (InstantiateTypesR shape dtype device Linear) )
+  , InstantiateLinearSpecsF shape dtype device
+  ) =>
+  Randomizable (Proxy (MLPSpec shape dtype device)) (MLP shape dtype device) where
+  sample _ = MLP <$> sample (instantiateLinearSpecsF @shape @dtype @device)
 
 
 instance
